@@ -3,6 +3,7 @@ package com.arcbees.demo.client.application;
 import javax.inject.Inject;
 
 import com.arcbees.demo.client.place.NameTokens;
+import com.google.gwt.user.client.Window;
 import com.google.web.bindery.event.shared.EventBus;
 import com.gwtplatform.mvp.client.HasUiHandlers;
 import com.gwtplatform.mvp.client.Presenter;
@@ -35,5 +36,10 @@ public class ApplicationPresenter extends Presenter<ApplicationPresenter.MyView,
         this.placeManager = placeManager;
 
         getView().setUiHandlers(this);
+    }
+
+    @Override
+    public void sendName(String name) {
+        Window.alert(name + " got passed from the view to the presenter!");
     }
 }
