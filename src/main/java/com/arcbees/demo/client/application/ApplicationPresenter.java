@@ -1,9 +1,10 @@
 package com.arcbees.demo.client.application;
 
+import java.util.logging.Logger;
+
 import javax.inject.Inject;
 
 import com.arcbees.demo.client.place.NameTokens;
-import com.google.gwt.user.client.Window;
 import com.google.web.bindery.event.shared.EventBus;
 import com.gwtplatform.mvp.client.HasUiHandlers;
 import com.gwtplatform.mvp.client.Presenter;
@@ -15,6 +16,7 @@ import com.gwtplatform.mvp.client.proxy.ProxyPlace;
 
 public class ApplicationPresenter extends Presenter<ApplicationPresenter.MyView, ApplicationPresenter.MyProxy>
         implements ApplicationUiHandlers {
+
     @ProxyStandard
     @NameToken(NameTokens.home)
     interface MyProxy extends ProxyPlace<ApplicationPresenter> {
@@ -24,22 +26,25 @@ public class ApplicationPresenter extends Presenter<ApplicationPresenter.MyView,
     }
 
     private final PlaceManager placeManager;
+    private final Logger logger;
 
     @Inject
     ApplicationPresenter(
             EventBus eventBus,
             MyView view,
             MyProxy proxy,
-            PlaceManager placeManager) {
+            PlaceManager placeManager,
+            Logger logger) {
         super(eventBus, view, proxy, RevealType.Root);
 
         this.placeManager = placeManager;
+        this.logger = logger;
 
         getView().setUiHandlers(this);
     }
 
     @Override
     public void sendName(String name) {
-        Window.alert(name + " got passed from the view to the presenter!");
+        logger.info(name + " got passed from the view to the presenter!");
     }
 }
