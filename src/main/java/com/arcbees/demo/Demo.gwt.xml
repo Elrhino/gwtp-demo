@@ -14,6 +14,8 @@
     
     <inherits name='com.gwtplatform.mvp.MvpWithEntryPoint' />
 
+    <inherits name='com.google.gwt.logging.Logging'/>
+
     <source path='client' />
     <source path='shared' />
 
