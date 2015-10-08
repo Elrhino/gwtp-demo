@@ -11,9 +11,10 @@
 
     <properties>
         <!-- client -->
-        <gwt.version>2.6.0</gwt.version>
-        <gwtp.version>1.2.1</gwtp.version>
+        <gwt.version>2.7.0</gwt.version>
+        <gwtp.version>1.5</gwtp.version>
         <gin.version>2.1.2</gin.version>
+        <gwtp-dispatch.version>1.5</gwtp-dispatch.version>
 
         <!-- server -->
         <guice.version>3.0</guice.version>
@@ -130,6 +131,18 @@
             <groupId>com.gwtplatform</groupId>
             <artifactId>gwtp-dispatch-rpc-shared</artifactId>
             <version>${gwtp.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.gwtplatform</groupId>
+            <artifactId>gwtp-dispatch-rest</artifactId>
+            <version>${gwtp-dispatch.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.gwtplatform</groupId>
+            <artifactId>gwtp-dispatch-rest-shared</artifactId>
+            <version>${gwtp-dispatch.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- DI -->

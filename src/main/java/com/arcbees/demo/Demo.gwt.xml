@@ -12,6 +12,8 @@
     <!-- Other module inherits -->
     <inherits name='com.gwtplatform.dispatch.Dispatch' />
     
+    <inherits name="com.gwtplatform.dispatch.rest.DispatchRest"/>
+
     <inherits name='com.gwtplatform.mvp.MvpWithEntryPoint' />
 
     <inherits name='com.google.gwt.logging.Logging'/>
@@ -19,6 +21,7 @@
     <source path='client' />
     <source path='shared' />
 
-    <set-configuration-property name="gin.ginjector.modules" 
-                                value="com.arcbees.demo.client.gin.ClientModule"/>
+    <extend-configuration-property
+            name="gin.ginjector.modules"
+            value="com.arcbees.demo.client.gin.ClientModule"/>
 </module>

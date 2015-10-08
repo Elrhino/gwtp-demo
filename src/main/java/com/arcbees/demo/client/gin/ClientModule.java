@@ -2,6 +2,9 @@ package com.arcbees.demo.client.gin;
 
 import com.arcbees.demo.client.application.ApplicationModule;
 import com.arcbees.demo.client.place.NameTokens;
+import com.arcbees.demo.client.CurrentUser;
+import com.gwtplatform.dispatch.rest.client.RestApplicationPath;
+import com.gwtplatform.dispatch.rest.client.gin.RestDispatchAsyncModule;
 import com.gwtplatform.mvp.client.annotations.DefaultPlace;
 import com.gwtplatform.mvp.client.annotations.ErrorPlace;
 import com.gwtplatform.mvp.client.annotations.UnauthorizedPlace;
@@ -19,8 +22,15 @@ public class ClientModule extends AbstractPresenterModule {
         install(new ApplicationModule());
 
         // DefaultPlaceManager Places
-        bindConstant().annotatedWith(DefaultPlace.class).to(NameTokens.home);
-        bindConstant().annotatedWith(ErrorPlace.class).to(NameTokens.home);
-        bindConstant().annotatedWith(UnauthorizedPlace.class).to(NameTokens.home);
+        bindConstant().annotatedWith(DefaultPlace.class).to(NameTokens.LOGIN);
+        bindConstant().annotatedWith(ErrorPlace.class).to(NameTokens.LOGIN);
+        bindConstant().annotatedWith(UnauthorizedPlace.class).to(NameTokens.LOGIN);
+
+        RestDispatchAsyncModule.Builder dispatchBuilder = new RestDispatchAsyncModule.Builder();
+        install(dispatchBuilder.build());
+
+        bindConstant().annotatedWith(RestApplicationPath.class).to("http://toaster-launcher-api.appspot.com");
+
+        bind(CurrentUser.class).asEagerSingleton();
     }
 }
