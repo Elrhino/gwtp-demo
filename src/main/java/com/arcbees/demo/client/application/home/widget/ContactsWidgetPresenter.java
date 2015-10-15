@@ -3,7 +3,7 @@ package com.arcbees.demo.client.application.home.widget;
 import java.util.List;
 
 import com.arcbees.demo.client.api.ContactResource;
-import com.arcbees.demo.client.api.domain.Contact;
+import com.arcbees.demo.client.api.Contact;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.inject.Inject;

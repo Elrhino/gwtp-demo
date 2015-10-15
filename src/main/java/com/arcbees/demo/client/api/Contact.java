@@ -1,4 +1,4 @@
-package com.arcbees.demo.client.api.domain;
+package com.arcbees.demo.client.api;
 
 public class Contact {
     private String name;

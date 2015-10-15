@@ -21,14 +21,14 @@ public class HomeView extends ViewWithUiHandlers<HomeUiHandlers> implements Home
     @UiField
     Button sendButton;
     @UiField
-    SimplePanel searchPanel;
+    SimplePanel contactPanel;
 
     @Inject
     HomeView(
             Binder uiBinder) {
         initWidget(uiBinder.createAndBindUi(this));
 
-        bindSlot(HomePresenter.SLOT_CONTACTS, searchPanel);
+        bindSlot(HomePresenter.SLOT_CONTACTS, contactPanel);
     }
 
     @UiHandler("sendButton")

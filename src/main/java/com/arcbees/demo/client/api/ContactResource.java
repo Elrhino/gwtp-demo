@@ -8,7 +8,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import com.arcbees.demo.client.api.domain.Contact;
 import com.gwtplatform.dispatch.rest.shared.RestAction;
 
 import static com.arcbees.demo.client.api.ApiPaths.TUTORIAL;

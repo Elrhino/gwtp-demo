@@ -2,7 +2,7 @@ package com.arcbees.demo.client.application.home.widget;
 
 import java.util.List;
 
-import com.arcbees.demo.client.api.domain.Contact;
+import com.arcbees.demo.client.api.Contact;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;

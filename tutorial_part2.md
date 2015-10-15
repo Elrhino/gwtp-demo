@@ -1,25 +1,28 @@
-# Beginners's Tutorial - Part 2
-In this second part tutorial, we're going to create a login page that will redirect the user to the home page. We're also going to add a search widget to the home page that will send requests to an external API.
+# Beginner's Tutorial - Part 2
+This second part of the tutorial will show you key features of GWTP. Namely, protecting your application using Gatekeepers, using the PlaceManager to navigate between Places, creating a PresenterWidget and make requests to an external API using RestDispatch.
 
 # Covered features
-* Gatekeeper
-* PlaceManager
-* PresenterWidget
-* NestedSlots
-* RestDispatch
+* [Gatekeeper](#Gatekeeper)
+* [PlaceManager](#PlaceManager)
+* [PresenterWidget](#PresenterWidget)
+* [RestDispatch](#RestDispatch)
 
 # Prerequisites
-This tutorial is the second part of [Beginner's Tutorial - Part 1](?).
+This tutorial assumes that you read the [first part](?) or that you understand how Views and Presenters interact together.
 
 # Application Structure
 
 ```
+├── api
+│   ├── ApiPaths.java
+│   ├── Contact.java
+│   ├── ContactResource.java
+│   └── RestDispatchModule.java
 ├── application
 │   ├── ApplicationModule.java
 │   ├── ApplicationPresenter.java
 │   ├── ApplicationView.java
 │   ├── ApplicationView.ui.xml
-│   ├── SuperDevModeUncaughtExceptionHandler.java
 │   ├── home
 │   │   ├── HomeModule.java
 │   │   ├── HomePresenter.java
@@ -27,28 +30,30 @@ This tutorial is the second part of [Beginner's Tutorial - Part 1](?).
 │   │   ├── HomeView.java
 │   │   ├── HomeView.ui.xml
 │   │   └── widget
-│   │       ├── SearchWidgetModule.java
-│   │       ├── SearchWidgetPresenter.java
-│   │       ├── SearchWidgetUiHandlers.java
-│   │       ├── SearchWidgetView.java
+│   │       ├── ContactsWidgetModule.java
+│   │       ├── ContactsWidgetPresenter.java
+│   │       ├── ContactsWidgetUiHandlers.java
+│   │       ├── ContactsWidgetView.java
 │   │       └── ContactsWidgetView.ui.xml
+│   ├── LoggedInGatekeeper.java
 │   └── login
 │       ├── LoginModule.java
 │       ├── LoginPresenter.java
 │       ├── LoginUiHandlers.java
 │       ├── LoginView.java
 │       └── LoginView.ui.xml
+├── CurrentUser.java
 ├── gin
 │   └── ClientModule.java
 └── place
     └── NameTokens.java
+
 ```
 
-## Gatekeeper - Creating a login page
+## Gatekeeper
+[Gatekeepers](?) are used to protect a Presenter from unauthorized access. They are often used on an application requiring a login page or an administration section that should not be visible without permission. When a Gatekeeper is applied to a Presenter, it will prevent the Presenter to be revealed unless the `gatekeeper.canReveal()` method returns `true`.
 
-[Gatekeepers](?) are used to protect a Presenter from unauthorized access. We're going to need one if we want the user to login before he can access the application.
-
-Let's create the `LoggedInGatekeeper`:
+This is an implementation of a Gatekeeper:
 
 ```java
 import com.google.inject.Inject;
@@ -59,20 +64,18 @@ import com.gwtplatform.mvp.client.proxy.Gatekeeper;
 public class LoggedInGatekeeper implements Gatekeeper {
     @Override
     public boolean canReveal() {
-        // User is logged in
+        // The user must be logged in
     }
 }
 ```
 
-`@DefaultGatekeeper` is going to tell GWTP to use this Gatekeeper on every Presenter having a ProxyPlace. You can also use the `@NoGatekeeper` annotation above a ProxyPlace interface if you don't want the default Gatekeeper to be applied to this specific Presenter. The `canReveal()` method needs a condition that, when met, will tell GWTP to reveal the Presenter. So, in this case, we need an object that will hold the information when the user logs in. Then, we're going to verify if the user is logged in on `canReveal()`.
+The next snippet shows you the same Gatekeeper, however `canReveal()` has to verify if the current used is logged in.
 
 ```java
 import com.arcbees.demo.client.CurrentUser;
 import com.google.inject.Inject;
-import com.gwtplatform.mvp.client.annotations.DefaultGatekeeper;
 import com.gwtplatform.mvp.client.proxy.Gatekeeper;
 
-@DefaultGatekeeper
 public class LoggedInGatekeeper implements Gatekeeper {
     private CurrentSession currentUser;
 
@@ -88,15 +91,33 @@ public class LoggedInGatekeeper implements Gatekeeper {
 }
 ```
 
-Now that we have a Gatekeeper, we're going to create the login page.
+Once the Gatekeeper is defined, there is multiple ways to apply it on Presenters. Here's 3 annotations that will help you accomplish this task:
+1. Using the `@DefaultGatekeeper` annotation above your **Gatekeeper** class declaration will tell GWTP to use this Gatekeeper on every Presenters in the application.
+1. The `@NoGatekeeper` annotation above a **Presenter's ProxyPlace** will tell GWTP to skip the default Gatekeeper.
+1. When a specific Gatekeeper should be applied to a Presenter, the `@UseGatekeeper(LoggedInGatekeeper.class)` annotation should be used above a **Presenter's ProxyPlace**.
 
-Let's create `LoginPresenter` under the `login/` package:
+This is the LoginPresenter:
 
 ```java
+import javax.inject.Inject;
+
+import com.arcbees.demo.client.application.ApplicationPresenter;
+import com.arcbees.demo.client.place.NameTokens;
+import com.arcbees.demo.client.CurrentUser;
+import com.google.web.bindery.event.shared.EventBus;
+import com.gwtplatform.mvp.client.HasUiHandlers;
+import com.gwtplatform.mvp.client.Presenter;
+import com.gwtplatform.mvp.client.View;
+import com.gwtplatform.mvp.client.annotations.NameToken;
+import com.gwtplatform.mvp.client.annotations.NoGatekeeper;
+import com.gwtplatform.mvp.client.annotations.ProxyStandard;
+import com.gwtplatform.mvp.client.proxy.ProxyPlace;
+
 public class LoginPresenter extends Presenter<LoginPresenter.MyView, LoginPresenter.MyProxy>
         implements LoginUiHandlers {
     @ProxyStandard
     @NameToken(NameTokens.LOGIN)
+    @NoGatekeeper
     interface MyProxy extends ProxyPlace<LoginPresenter> {
     }
 
@@ -107,14 +128,27 @@ public class LoginPresenter extends Presenter<LoginPresenter.MyView, LoginPresen
     private static final String USERNAME = "admin";
     private static final String PASSWORD = "admin123";
 
+    private CurrentUser currentUser;
+
     @Inject
     LoginPresenter(
             EventBus eventBus,
             MyView view,
-            MyProxy proxy) {
+            MyProxy proxy,
+            CurrentUser currentUser) {
         super(eventBus, view, proxy, ApplicationPresenter.SLOT_MAIN_CONTENT);
 
+        this.placeManager = placeManager;
         getView().setUiHandlers(this);
+    }
+
+    @Override
+    public void confirm(String username, String password) {
+        if (validateCredentials(username, password)) {
+            currentUser.setLoggedIn(true);
+
+            // TODO: Navigate to the HomePresenter
+        }
     }
 
     private boolean validateCredentials(String username, String password) {
@@ -123,9 +157,11 @@ public class LoginPresenter extends Presenter<LoginPresenter.MyView, LoginPresen
 }
 ```
 
-For the purpose of this tutorial, we're storing the user credentials in the Presenter, but we **strongly discourage** you to do so in a production scenario. We've also added a simple validation method for the username and password.
+Notice the `@NoGatekeeper` annotation above the ProxyPlace. The LoginPresenter will need to be revealed when the user enters its credentials. This is why the Gatekeeper is skipped on this Presenter.
 
-This is the `LoginView.ui.xml`:
+**NOTE:** User credentials should never be stored on the client-side.
+
+This is the LoginView.ui.xml:
 
 ```xml
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
@@ -138,7 +174,7 @@ This is the `LoginView.ui.xml`:
 </ui:UiBinder>
 ```
 
-And the `LoginView`:
+And the LoginView:
 
 ```java
 import javax.inject.Inject;
@@ -177,106 +213,139 @@ public class LoginView extends ViewWithUiHandlers<LoginUiHandlers> implements Lo
 }
 ```
 
-The `onConfirm()` method will tell the UiHandler to call `confirm()` on the `LoginPresenter` side.
+## PlaceManager
+The [PlaceManager](?) allow you to navigate from one Place to another by using the `revealPlace()` method. The PlaceManager needs to be injected into the Presenter's constructor and needs a [PlaceRequest](?) object in order to call `revealPlace(placeRequest)`.
+
+From the LoginPresenter, a PlaceRequest can be built using the `PlaceRequest.Builder()`:
 
 ```java
-import com.gwtplatform.mvp.client.UiHandlers;
+@Override
+public void confirm(String username, String password) {
+    if (validateCredentials(username, password)) {
+        currentUser.setLoggedIn(true);
 
-public interface LoginUiHandlers extends UiHandlers {
-    void confirm(String username, String password);
+        PlaceRequest placeRequest = new PlaceRequest.Builder()
+                .nameToken(NameTokens.HOME)
+                .build();
+        placeManager.revealPlace(placeRequest);
+    }
 }
 ```
 
-Now `LoginPresenter` must override `confirm()`:
+The HomePresenter will now be revealed after a user enters the right credentials.
+
+## PresenterWidget
+A [PresenterWidget](?) allow you to reuse UI components throughout an application. It has the same functionality as a GWT Widget but with the flexibility of a View-Presenter pair. PresenterWidgets cannot be Places. This means that you cannot navigate to them. They are nested inside a Presenter using the [slot mechanism](?).
+
+This is the ContactsWidgetPresenter under `home/widget/`:
 
 ```java
-    @Override
-    public void confirm(String username, String password) {
-        validateCredentials(username, password);
+import com.google.gwt.core.client.GWT;
+import com.google.inject.Inject;
+import com.google.web.bindery.event.shared.EventBus;
+import com.gwtplatform.mvp.client.HasUiHandlers;
+import com.gwtplatform.mvp.client.PresenterWidget;
+import com.gwtplatform.mvp.client.View;
 
-        currentUser.setLoggedIn(true);
-    }
-```
-
-## PlaceManager - Navigating to another place
-
-## PresenterWidget - Creating a search widget
-A [PresenterWidget](?) allow you to reuse UI components throughout an application. It has the same functionality as a GWT Widget but implements the MVP pattern. Let's say we want to add a very basic "Contact" search functionality. If we were to reuse this functionality on multiple presenters, the best way to achieve this would be with a PresenterWidget.
-
-Let's begin by creating a new package under `home/` and call it `widget`.
-
-Here is the `SearchPresenterWidget`:
-
-```java
-public class SearchWidgetPresenter extends PresenterWidget<SearchWidgetPresenter.MyView>
-        implements SearchWidgetUiHandlers {
-    public interface MyView extends View, HasUiHandlers<SearchWidgetUiHandlers> {
+public class ContactsWidgetPresenter extends PresenterWidget<ContactsWidgetPresenter.MyView>
+        implements ContactsWidgetUiHandlers {
+    interface MyView extends View, HasUiHandlers<ContactsWidgetUiHandlers> {
     }
 
     @Inject
-    public SearchWidgetPresenter(
+    public ContactsWidgetPresenter(
             EventBus eventBus,
             MyView view) {
         super(eventBus, view);
 
         getView().setUiHandlers(this);
     }
-
-    @Override
-    public void search(String searchTerm) {
-        // Send request to the server
-    }
 }
 ```
 
-And this is the `SearchWidgetView`:
+Notice that there is no `MyProxy` interface extending `ProxyPlace`. Again, this is because a PresenterWidget cannot be a Place. There is no `RevealContent` event in `super()` either because a PresenterWidget is revealed by its parent Presenter.
+
+**NOTE**: The process to associate a View and a UiHandlers to a PresenterWidget does not change from a regular Presenter.
+
+Binding a PresenterWidget is a little bit different than binding a Presenter. Instead of using the `bindPresenter()` method, you can either use `bindPresenterWidget()` or `  bindSingletonPresenterWidget()` if you wish to have only one instance of the PresenterWidget.
 
 ```java
-public class SearchWidgetView extends ViewWithUiHandlers<SearchWidgetUiHandlers>
-        implements SearchWidgetPresenter.MyView {
-    interface Binder extends UiBinder<HTMLPanel, SearchWidgetView> {
-    }
+import com.gwtplatform.mvp.client.gin.AbstractPresenterModule;
 
-    @UiField
-    TextBox searchField;
-    @UiField
-    Button searchButton;
-
-    @Inject
-    public SearchWidgetView(Binder uiBinder) {
-        initWidget(uiBinder.createAndBindUi(this));
-    }
-
-    @UiHandler("searchButton")
-    void onSearch(ClickEvent clickEvent) {
-        String searchFieldText = searchField.getText();
-
-        if (!Strings.isNullOrEmpty(searchFieldText)) {
-            getUiHandlers().search(searchFieldText);
-        }
+public class ContactsWidgetModule extends AbstractPresenterModule {
+    @Override
+    protected void configure() {
+        bindSingletonPresenterWidget(ContactsWidgetPresenter.class, ContactsWidgetPresenter.MyView.class,
+                ContactsWidgetView.class);
     }
 }
 ```
 
-We only need two fields for this View, a search box and a confirm button.
+In order for the parent Presenter to reveal a PresenterWidget, the parent must define a [Slot](?) for the child to be set into. This can be achieve by defining a field `public static final Slot SLOT_CONTENT = new Slot();` and then using the `setInSlot()` method to set the PresenterWidget into its parent's slot.
+
+This is the HomePresenter:
+
+```java
+public class HomePresenter extends Presenter<HomePresenter.MyView, HomePresenter.MyProxy>
+        implements HomeUiHandlers {
+    @ProxyStandard
+    @NameToken(NameTokens.HOME)
+    interface MyProxy extends ProxyPlace<HomePresenter> {
+    }
+
+    interface MyView extends View, HasUiHandlers<HomeUiHandlers> {
+    }
+
+    public static final Slot SLOT_CONTACTS = new Slot();
+
+    private ContactsWidgetPresenter contactsWidgetPresenter;
+
+    @Inject
+    HomePresenter(
+            EventBus eventBus,
+            MyView view,
+            MyProxy proxy,
+            ContactsWidgetPresenter contactsWidgetPresenter) {
+        super(eventBus, view, proxy, ApplicationPresenter.SLOT_MAIN_CONTENT);
+
+        this.contactsWidgetPresenter = contactsWidgetPresenter;
+        getView().setUiHandlers(this);
+        setInSlot(SLOT_CONTACTS, contactsWidgetPresenter);
+    }
+
+    ...
+}
+```
+
+After the PresenterWidget is set in the Slot, the parent's View needs a container for the PresenterWidget to be displayed into. When the container is defined, it can be binded to the Presenter's Slot using `bindSlot()`.
+
+This is the HomeView.ui.xml:
 
 ```xml
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
              xmlns:g='urn:import:com.google.gwt.user.client.ui'>
     <g:HTMLPanel>
-        <h3>Search</h3>
-        <g:TextBox ui:field="searchField"/>
-        <g:Button ui:field="searchButton"/>
+        <g:TextBox ui:field="nameField"/>
+        <g:Button ui:field="sendButton" text="submit"/>
+        <g:SimplePanel ui:field="contactPanel"/>
     </g:HTMLPanel>
 </ui:UiBinder>
 ```
 
-```java
-import com.gwtplatform.mvp.client.UiHandlers;
+This is the HomeView:
 
-public interface SearchWidgetUiHandlers extends UiHandlers {
-    void search(String searchTerm);
+```java
+@UiField
+SimplePanel contactPanel;
+
+@Inject
+HomeView(
+        Binder uiBinder) {
+    initWidget(uiBinder.createAndBindUi(this));
+
+    bindSlot(HomePresenter.SLOT_CONTACTS, contactPanel);
 }
 ```
 
-## RestDispatch - Sending requests to a server
+## RestDispatch
+[RestDispatch](?) is a client library used to communicate to a server in a RESTful manner. It can be used independently of GWTP for any GWT project.

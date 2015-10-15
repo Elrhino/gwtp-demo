@@ -3,6 +3,6 @@
     <g:HTMLPanel>
         <g:TextBox ui:field="nameField"/>
         <g:Button ui:field="sendButton" text="submit"/>
-        <g:SimplePanel ui:field="searchPanel"/>
+        <g:SimplePanel ui:field="contactPanel"/>
     </g:HTMLPanel>
 </ui:UiBinder>
